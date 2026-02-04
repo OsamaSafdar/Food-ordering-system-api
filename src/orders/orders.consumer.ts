@@ -18,6 +18,8 @@ export class OrdersConsumer {
       );
 
       // we will send real email / SMS / push notification here in real flow
+      // Example: await this.notificationService.sendOrderConfirmation(data);
+
       channel.ack(originalMsg);
     } catch (error) {
       console.error(`Failed to process order ${data.orderId}:`, error);

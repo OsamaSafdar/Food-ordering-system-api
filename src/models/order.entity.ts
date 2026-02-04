@@ -15,7 +15,7 @@ export class Order {
   @Column('jsonb')
   items: { productId: string; variant: string; quantity: number; price: number }[];
 
-  @Column()
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
   total: number;
 
   @Column()

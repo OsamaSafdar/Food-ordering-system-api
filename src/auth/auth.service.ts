@@ -1,4 +1,4 @@
-import { Inject, Injectable, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../models/user.entity';
@@ -20,9 +20,24 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto): Promise<{ token: string }> {
-    const { name, email, phone, password } = registerDto;
+    const { name, email, phone, password, role } = registerDto;
+
+   
+    const existingUser = await this.usersRepository.findOne({
+      where: [{ email }, { phone }],
+    });
+    if (existingUser) {
+      throw new ConflictException('User with this email or phone already exists');
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = this.usersRepository.create({ name, email, phone, password: hashedPassword });
+    const user = this.usersRepository.create({
+      name,
+      email,
+      phone,
+      password: hashedPassword,
+      role: role || 'user',  // Default to 'user' if not provided
+    });
     await this.usersRepository.save(user);
     const token = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
     await this.saveToken(user, token);
@@ -52,7 +67,7 @@ export class AuthService {
     const otp = generateOtp();
     const hashedOtp = hashOtp(otp);
     await this.redisClient.set(`otp:${identifier}`, hashedOtp, 'EX', 300); // 5 min TTL
-    // simulating here ,In prod we send via email/SMS; here, log for testing
+    // In prod, send via email/SMS; here, log for testing
     console.log(`OTP for ${identifier}: ${otp}`);
     return { message: 'OTP sent' };
   }

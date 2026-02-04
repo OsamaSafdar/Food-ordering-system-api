@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
 import { Redis } from 'ioredis';
-
+import { RolesGuard } from 'src/common/guards/roles.guard';
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
@@ -28,10 +28,12 @@ import { Redis } from 'ioredis';
       return new Redis({
         host: config.get('REDIS_HOST'),
         port: +config.get('REDIS_PORT'),
-      });
+      }
+    );
     },
     inject: [ConfigService],
-  }],
+ },
+  ],
   exports: [JwtStrategy, PassportModule, AuthService],
 })
 export class AuthModule {}

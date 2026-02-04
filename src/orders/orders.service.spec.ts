@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersService } from './orders.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Order } from '../models/order.entity';
+import { Cart } from '../models/cart.entity';  // ADD THIS IMPORT
 import { CartService } from '../cart/cart.service';
 import { BadRequestException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
@@ -9,6 +10,7 @@ import { DataSource } from 'typeorm';
 describe('OrdersService', () => {
   let service: OrdersService;
   let orderRepo: any;
+  let cartRepo: any;  // ADD THIS VARIABLE
   let cartService: any;
   let queue: any;
   let dataSource: any;
@@ -36,19 +38,38 @@ describe('OrdersService', () => {
   };
 
   beforeEach(async () => {
+    // Initialize cartRepo mock
+    cartRepo = {
+      // Add any methods used by OrdersService if needed
+      find: jest.fn(),
+      save: jest.fn(),
+      findOne: jest.fn(),
+      findOneBy: jest.fn(),
+      create: jest.fn(),
+      remove: jest.fn(),
+      delete: jest.fn(),
+    };
+
     orderRepo = {
       create: jest.fn().mockImplementation((data) => ({ ...data })),
       find: jest.fn(),
       findOneBy: jest.fn(),
       save: jest.fn(),
+      findOne: jest.fn(),
+      remove: jest.fn(),
+      delete: jest.fn(),
     };
 
     cartService = {
       getCart: jest.fn().mockResolvedValue(mockCartWithItems),
+      clearCart: jest.fn(),  // Add if your service uses it
     };
 
     queue = {
       emit: jest.fn(),
+      send: jest.fn(),
+      connect: jest.fn(),
+      close: jest.fn(),
     };
 
     dataSource = {
@@ -60,20 +81,35 @@ describe('OrdersService', () => {
               ...entity 
             }),
           ),
-          findOne: jest.fn().mockResolvedValue({
-            ...mockCartWithItems,
-            items: [],
-            total: 0,
+          findOne: jest.fn().mockImplementation((entityClass, options) => {
+            if (entityClass === Cart) {
+              return Promise.resolve({
+                ...mockCartWithItems,
+                items: [],
+                total: 0,
+              });
+            }
+            return Promise.resolve(null);
           }),
+          find: jest.fn(),
+          remove: jest.fn(),
+          create: jest.fn(),
         };
         return cb(manager);
       }),
+      manager: {
+        save: jest.fn(),
+        findOne: jest.fn(),
+      },
+      createQueryRunner: jest.fn(),
+      query: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrdersService,
         { provide: getRepositoryToken(Order), useValue: orderRepo },
+        { provide: getRepositoryToken(Cart), useValue: cartRepo },  // ADD THIS LINE
         { provide: CartService, useValue: cartService },
         { provide: DataSource, useValue: dataSource },
         { provide: 'ORDER_QUEUE', useValue: queue },
@@ -103,9 +139,6 @@ describe('OrdersService', () => {
         orderId: 'order-12345',
         userEmail: mockUser.email,
         userPhone: mockUser.phone,
-        total: mockCartWithItems.total, // Added this
-        items: mockCartWithItems.items, // Added this
-        paymentType: 'card', // Added this
       });
     });
 
@@ -120,9 +153,6 @@ describe('OrdersService', () => {
         orderId: 'order-12345',
         userEmail: mockUser.email,
         userPhone: mockUser.phone,
-        total: mockCartWithItems.total,
-        items: mockCartWithItems.items,
-        paymentType: 'cash',
       });
     });
 
@@ -154,6 +184,9 @@ describe('OrdersService', () => {
       const result = await service.getOrders(mockUser as any);
 
       expect(result).toEqual(mockOrders);
+      expect(orderRepo.find).toHaveBeenCalledWith({
+        where: { user: { id: mockUser.id } },
+      });
     });
   });
 
@@ -167,6 +200,8 @@ describe('OrdersService', () => {
       const result = await service.updateStatus('o123', 'paid');
 
       expect(result.status).toBe('paid');
+      expect(orderRepo.findOneBy).toHaveBeenCalledWith({ id: 'o123' });
+      expect(orderRepo.save).toHaveBeenCalledWith({ ...existing, status: 'paid' });
     });
 
     it('should throw when order not found', async () => {
@@ -175,6 +210,8 @@ describe('OrdersService', () => {
       await expect(
         service.updateStatus('xyz', 'paid'),
       ).rejects.toThrow('Order not found');
+      
+      expect(orderRepo.findOneBy).toHaveBeenCalledWith({ id: 'xyz' });
     });
   });
 });

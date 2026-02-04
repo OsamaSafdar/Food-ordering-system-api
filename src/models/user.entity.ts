@@ -1,4 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Exclude } from 'class-transformer';
 
 @Entity('users')
 export class User {
@@ -15,11 +16,13 @@ export class User {
   phone: string;
 
   @Column()
+  @Exclude()  // Excluding from serialization
   password: string;
+
+  @Column('simple-array', { nullable: true })
+  @Exclude()
+  tokens?: string[];
 
   @Column({ default: 'user' })
   role: string;
-
-  @Column('simple-array', { nullable: true })
-  tokens: string[];
 }

@@ -13,6 +13,6 @@ export class Cart {
   @Column('jsonb')
   items: { productId: string; variant: string; quantity: number; price: number }[];
 
-  @Column({ default: 0 })
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
   total: number;
 }

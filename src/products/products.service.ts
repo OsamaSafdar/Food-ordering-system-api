@@ -6,7 +6,6 @@ import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 
-
 @Injectable()
 export class ProductsService {
   constructor(

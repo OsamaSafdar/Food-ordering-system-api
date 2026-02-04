@@ -18,6 +18,16 @@ export class CreateProductDto {
   @IsString()
   name: string;
 
+  @ApiProperty({ example: 'Delicious burger', required: false })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiProperty({ example: 5.99, required: false })
+  @IsOptional()
+  @IsNumber()
+  basePrice?: number;
+
   @ApiProperty({ type: [VariantDto], example: [{ name: 'Single', price: 5.99 }, { name: 'Double', price: 8.99 }] })
   @IsArray()
   @ValidateNested({ each: true })

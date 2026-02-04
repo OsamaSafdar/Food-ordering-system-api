@@ -1,18 +1,20 @@
-import { Injectable, BadRequestException, Inject } from '@nestjs/common';
+import { Inject,Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Order } from '../models/order.entity';
 import { User } from '../models/user.entity';
+import { Cart } from '../models/cart.entity';
 import { CartService } from '../cart/cart.service';
 import { PlaceOrderDto } from './dto/order.dto';
 import { ClientProxy } from '@nestjs/microservices';
-import { Cart } from '../models/cart.entity';
 
 @Injectable()
 export class OrdersService {
   constructor(
     @InjectRepository(Order)
     private ordersRepo: Repository<Order>,
+    @InjectRepository(Cart)
+    private cartRepo: Repository<Cart>,
     private cartService: CartService,
     private dataSource: DataSource,
     @Inject('ORDER_QUEUE') private orderQueue: ClientProxy,
@@ -24,8 +26,7 @@ export class OrdersService {
       throw new BadRequestException('Cart is empty');
     }
 
-    return this.dataSource.transaction(async (manager) => {
-      // Creating and saving order
+    return this.dataSource.transaction<Order>(async (manager) => {
       const order = this.ordersRepo.create({
         user,
         items: [...cart.items],
@@ -36,7 +37,6 @@ export class OrdersService {
 
       const savedOrder = await manager.save(order);
 
-      // Clearing cart using same transaction manager
       const cartEntity = await manager.findOne(Cart, {
         where: { user: { id: user.id } },
       });
@@ -47,14 +47,10 @@ export class OrdersService {
         await manager.save(cartEntity);
       }
 
-      // Emmiting to queue 
       this.orderQueue.emit('process_order', {
         orderId: savedOrder.id,
         userEmail: user.email,
         userPhone: user.phone,
-        total: savedOrder.total,
-        items: savedOrder.items,
-        paymentType: savedOrder.paymentType,
       });
 
       return savedOrder;

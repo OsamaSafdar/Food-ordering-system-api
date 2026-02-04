@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+
 import { OrdersService } from './orders.service';
 import { OrdersController } from './orders.controller';
 import { OrdersConsumer } from './orders.consumer';

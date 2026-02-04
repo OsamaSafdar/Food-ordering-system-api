@@ -149,6 +149,10 @@ npm run typeorm migration:run
 
 <img width="1600" height="1493" alt="image" src="https://github.com/user-attachments/assets/dba59439-ff0a-41f4-83f1-513b951d58f0" />
 <img width="1600" height="1493" alt="image" src="https://github.com/user-attachments/assets/976046d8-7f97-4616-a146-2f69af1b0827" />
+
+
+<img width="733" height="774" alt="image" src="https://github.com/user-attachments/assets/dddbf828-ef69-4d88-80ea-dbf628381fd1" />
+
 <img width="1600" height="1312" alt="image" src="https://github.com/user-attachments/assets/763b3ea8-01a2-47ef-8874-a63936f56f47" />
 
 
